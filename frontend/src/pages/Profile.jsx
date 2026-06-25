@@ -210,7 +210,7 @@ export default function Profile() {
   const [user, setUser] = useState(null);
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  
 
   // Profile form
   const [name, setName] = useState("");

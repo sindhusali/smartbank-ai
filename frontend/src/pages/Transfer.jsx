@@ -79,18 +79,6 @@ function Sidebar({ active }) {
 
 // Demo fraud check — replace with a real call to your ML service / backend later.
 // Flags large amounts and "new-looking" recipient account numbers as a demo heuristic.
-function simulateFraudCheck({ amount, toAccount }) {
-  const amt = Number(amount);
-  let score = 0.05;
-  const reasons = [];
-
-  if (amt > 50000) { score += 0.45; reasons.push("amount is significantly higher than your typical transfer"); }
-  if (amt > 100000) { score += 0.25; reasons.push("transfer exceeds Rs 1,00,000, well above your usual range"); }
-  if (toAccount && toAccount.length >= 6) { score += 0.15; reasons.push("this is the first transfer to this recipient"); }
-
-  score = Math.min(score, 0.97);
-  return { risk_score: score, flagged: score > 0.7, reasons };
-}
 
 function FraudWarningModal({ result, amount, onCancel, onProceed, loading }) {
   const pct = Math.round(result.risk_score * 100);
