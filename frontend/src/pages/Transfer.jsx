@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-const API = "process.env.REACT_APP_API_URL || "http://localhost:5000/api"";
+const API = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
 
 function Shield() {
   return (
@@ -77,9 +77,6 @@ function Sidebar({ active }) {
   );
 }
 
-// Demo fraud check — replace with a real call to your ML service / backend later.
-// Flags large amounts and "new-looking" recipient account numbers as a demo heuristic.
-
 function FraudWarningModal({ result, amount, onCancel, onProceed, loading }) {
   const pct = Math.round(result.risk_score * 100);
   return (
@@ -96,7 +93,6 @@ function FraudWarningModal({ result, amount, onCancel, onProceed, loading }) {
         <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#64748b", textAlign: "center", margin: "0 0 20px" }}>
           We'd like you to confirm this transfer of {formatINR(amount)} before proceeding.
         </p>
-
         <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, padding: "14px 16px", marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: "#991b1b", fontWeight: 600 }}>RISK SCORE</span>
@@ -110,10 +106,9 @@ function FraudWarningModal({ result, amount, onCancel, onProceed, loading }) {
             <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11.5, fontWeight: 600, color: "#991b1b" }}>AI EXPLANATION</span>
           </div>
           <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#7f1d1d", lineHeight: 1.6, margin: 0 }}>
-  {result.ai_explanation || `This transaction was flagged because ${result.reasons.join('; ')}.`}
-</p>
+            {result.ai_explanation || `This transaction was flagged because ${result.reasons ? result.reasons.join("; ") : "it deviates from your typical activity"}. We recommend double-checking the recipient details before confirming.`}
+          </p>
         </div>
-
         <div style={{ display: "flex", gap: 10 }}>
           <button onClick={onCancel} style={{ flex: 1, height: 46, borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#475569", fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
             Cancel transfer
@@ -165,11 +160,8 @@ export default function Transfer() {
     async function load() {
       try {
         const res = await fetch(`${API}/accounts`, {
-  headers: {
-    ...authHeader(),
-    'Cache-Control': 'no-cache',
-  }
-});
+          headers: { ...authHeader(), "Cache-Control": "no-cache" },
+        });
         if (!res.ok) throw new Error();
         const data = await res.json();
         setAccounts(data);
@@ -197,56 +189,53 @@ export default function Transfer() {
     return errs;
   }
 
- async function executeTransfer() {
-  setSubmitting(true);
-  setServerError("");
-  try {
-    const res = await fetch(`${API}/transactions/transfer`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeader() },
-      body: JSON.stringify({
-        from_account_id: fromAccount,
-        to_account_number: toAccount,
-        amount: Number(amount),
-        note,
-      }),
-    });
+  async function executeTransfer() {
+    setSubmitting(true);
+    setServerError("");
+    try {
+      const res = await fetch(`${API}/transactions/transfer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeader() },
+        body: JSON.stringify({
+          from_account_id: fromAccount,
+          to_account_number: toAccount,
+          amount: Number(amount),
+          note,
+        }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      throw new Error(data.message || "Transfer failed");
+      if (!res.ok) {
+        throw new Error(data.message || "Transfer failed");
+      }
+
+      if (data.flagged) {
+        setFraudResult({
+          risk_score: data.risk_score,
+          flagged: true,
+          reasons: data.reasons,
+          ai_explanation: data.ai_explanation,
+        });
+        setSubmitting(false);
+        return;
+      }
+
+      setFraudResult(null);
+      setShowSuccess(true);
+    } catch (err) {
+      setServerError(err.message);
+    } finally {
+      setSubmitting(false);
     }
-
-    // If backend flagged it, show the fraud warning modal
-  if (data.flagged) {
-  setFraudResult({
-    risk_score: data.risk_score,
-    flagged: true,
-    reasons: data.reasons,
-    ai_explanation: data.ai_explanation,
-  });
-  setSubmitting(false);
-  return;
-}
-    setFraudResult(null);
-    setShowSuccess(true);
-  } catch (err) {
-    setServerError(err.message);
-  } finally {
-    setSubmitting(false);
   }
-}
 
   function handleSubmit(e) {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setErrors({});
-
-   
-      executeTransfer();
-    
+    executeTransfer();
   }
 
   function resetForm() {
@@ -259,9 +248,7 @@ export default function Transfer() {
   return (
     <div style={pageStyle}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet" />
-
       <Sidebar active="transfer" />
-
       <main style={mainStyle}>
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 600, color: "#0f172a", margin: 0 }}>
@@ -353,11 +340,11 @@ export default function Transfer() {
               <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#0f172a" }}>How fraud screening works</span>
             </div>
             <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12.5, color: "#64748b", lineHeight: 1.7, margin: 0 }}>
-              Every transfer is scored in real time based on amount, recipient history, and recent activity. Transfers scoring above 70% risk are paused for your confirmation, with a plain-English explanation of why.
+              Every transfer is scored in real time by our XGBoost ML model trained on 284,807 transactions. Transfers scoring above 45% risk are paused for your confirmation, with an AI-generated plain-English explanation of why.
             </p>
             <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #e2e8f0" }}>
               <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11.5, color: "#94a3b8", margin: 0, lineHeight: 1.6 }}>
-                Try sending ₹60,000+ to see the fraud check in action.
+                Try sending ₹1,10,000+ to a new recipient to see the fraud check in action.
               </p>
             </div>
           </div>
@@ -394,6 +381,7 @@ function inputStyle(error) {
     borderRadius: 10, outline: "none", color: "#0f172a", boxSizing: "border-box",
   };
 }
+
 function selectStyle(error) {
   return { ...inputStyle(error), cursor: "pointer" };
 }

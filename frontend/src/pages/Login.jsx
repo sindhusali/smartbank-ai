@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const API = "process.env.REACT_APP_API_URL || "http://localhost:5000/api"";
+const API = "http://localhost:5000/api";
 
 // Same shield mark as Register, for visual consistency
 function Shield() {
@@ -152,10 +152,9 @@ export default function Login() {
 
       // Persist token — sessionStorage if "remember me" is off
       const storage = remember ? localStorage : sessionStorage;
-storage.setItem("token", data.token);
-storage.setItem("user", JSON.stringify(data.user));
+      storage.setItem("token", data.token);
 
-window.location.href = "/dashboard";
+      window.location.href = "/dashboard";
     } catch (err) {
       setAttempts(a => a + 1);
       setServerError(err.message);
