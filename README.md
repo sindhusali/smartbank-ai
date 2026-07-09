@@ -280,7 +280,7 @@ Transaction + fraud flag saved to PostgreSQL
 
 ## 👩‍💻 Author
 
-**Sali Sindhu Sri**
+** Sindhu Sri Sali **
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=flat&logo=linkedin&logoColor=white)](https://linkedin.com/in/sindhu-sri-sali-6867463b2/)
 [![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white)](https://github.com/sindhusali)
